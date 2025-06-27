@@ -1,0 +1,52 @@
+# .github/workflows/ci.yml
+
+name: Django CI
+
+# This workflow runs on pushes to the 'main' branch and on any pull request.
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    # This job will run on the latest version of Ubuntu.
+    runs-on: ubuntu-latest
+    
+    # We want to test against multiple Python versions to ensure compatibility.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      # Step 1: Check out the repository's code so the workflow can access it.
+      - uses: actions/checkout@v4
+
+      # Step 2: Set up Poetry for dependency management.
+      - name: Set up Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '1.8.2' # Pinning a specific version is good practice
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      # Step 3: Set up the specific Python version for the current job matrix.
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      # Step 4: Install the project dependencies using the poetry.lock file.
+      # This ensures we use the exact same versions that you tested with locally.
+      - name: Install dependencies
+        run: poetry install
+
+      # Step 5: Run the test suite using pytest.
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          poetry run pytest
