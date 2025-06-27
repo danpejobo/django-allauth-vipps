@@ -1,11 +1,13 @@
-from dj_rest_auth.registration.views import SocialLoginView
-from vipps_auth.views import VippsOAuth2Adapter
+# vipps_auth/urls.py
 
-class VippsLogin(SocialLoginView):
-    adapter_class = VippsOAuth2Adapter
+from django.urls import path
+from . import views
 
+# These patterns are for the standard browser-based OAuth flow.
+# A consuming project can include these URLs, for example, under `/accounts/`.
+# Path: /accounts/vipps/login/ -> redirects to Vipps
+# Path: /accounts/vipps/login/callback/ -> handles the return from Vipps
 urlpatterns = [
-    path('api/v1/auth/social/vipps/', VippsLogin.as_view(), name='vipps_login_api'),
-    path('accounts/', include('vipps_auth.urls')), # For browser-based flow
-
+    path("vipps/login/", views.vipps_login, name="vipps_login"),
+    path("vipps/login/callback/", views.vipps_callback, name="vipps_callback"),
 ]
