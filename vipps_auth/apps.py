@@ -16,7 +16,11 @@ class VippsAuthConfig(AppConfig):
         try:
             from allauth.socialaccount import providers
             from .provider import VippsProvider
-            
+            # Apply compatibility monkey patch for OAuth2Client when the app is
+            # fully loaded and Django's registry is ready.
+            from . import patch_allauth_client
+
+            patch_allauth_client()
             providers.registry.register(VippsProvider)
         except ImportError:
             # This try/except block is a safeguard for cases where allauth
