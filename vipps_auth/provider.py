@@ -4,7 +4,7 @@ from allauth.socialaccount.providers.base import ProviderAccount
 from allauth.socialaccount.providers.oauth2.provider import OAuth2Provider
 from allauth.account.adapter import get_adapter
 
-# Import our configurable settings
+# Import our configurable settings helper
 from .settings import vipps_auth_settings
 
 class VippsAccount(ProviderAccount):
@@ -16,27 +16,24 @@ class VippsProvider(OAuth2Provider):
     name = 'Vipps'
     account_class = VippsAccount
 
-    def __init__(self, *args, **kwargs):
-        """
-        Dynamically set the endpoint URLs from our settings object.
-        This allows the user to switch between test and production by changing
-        the BASE_URL in their settings.py.
-        """
-        super().__init__(*args, **kwargs)
-        base_url = vipps_auth_settings.BASE_URL
-        self.access_token_url = f'{base_url}/access-management-1.0/access/oauth2/token'
-        self.authorize_url = f'{base_url}/access-management-1.0/access/oauth2/auth'
-        self.profile_url = f'{base_url}/vipps-userinfo-api/userinfo'
+    # THE MISSING PIECE:
+    # Define the endpoint URLs as class attributes. We construct them from
+    # our settings helper so they remain configurable (test vs. production).
+    # The allauth framework will read these attributes from this class.
+    access_token_url = f"{vipps_auth_settings.BASE_URL}/access-management-1.0/access/oauth2/token"
+    authorize_url = f"{vipps_auth_settings.BASE_URL}/access-management-1.0/access/oauth2/auth"
+    profile_url = f"{vipps_auth_settings.BASE_URL}/vipps-userinfo-api/userinfo"
+
 
     def get_default_scope(self):
         """
-        Returns the scopes from our configurable settings object.
+        Returns the scopes (permissions) to request from the user.
         """
         return vipps_auth_settings.SCOPES
 
     def extract_uid(self, data):
         """
-        Extracts the unique user ID ('sub' claim). This is a stable identifier from Vipps.
+        Extracts the unique user ID ('sub' claim) from the user data.
         """
         uid = data.get('sub')
         if not uid:
@@ -47,7 +44,7 @@ class VippsProvider(OAuth2Provider):
 
     def extract_common_fields(self, data):
         """
-        Maps standard claims from Vipps to the Django User model.
+        Maps standard claims from Vipps to the common Django User model fields.
         """
         return {
             'email': data.get('email'),
@@ -58,23 +55,17 @@ class VippsProvider(OAuth2Provider):
     def extract_extra_data(self, data):
         """
         Saves all other data received from the userinfo endpoint into the
-        SocialAccount's `extra_data` JSON field. This is useful for accessing
-        non-standard fields like phone_number or nin later.
+        SocialAccount's `extra_data` JSON field.
         """
         return data
 
     def sociallogin_from_response(self, request, response):
         """
-        Performs validation checks on the user data received from Vipps before creating
-        the SocialLogin object that represents the session.
+        Performs validation checks on the user data received from Vipps.
         """
         adapter = get_adapter()
-
-        # Check for our EMAIL_VERIFIED_REQUIRED setting.
         if vipps_auth_settings.EMAIL_VERIFIED_REQUIRED:
             email_verified = response.get('email_verified', False)
             if not email_verified:
                 adapter.error("Login cancelled: Email from Vipps is not verified.")
-                # This will stop the login process and show an error to the user.
-
         return super().sociallogin_from_response(request, response)

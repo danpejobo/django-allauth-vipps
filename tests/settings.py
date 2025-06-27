@@ -14,6 +14,7 @@ INSTALLED_APPS = [
 
     # Third-party apps required for tests
     "rest_framework",
+    "rest_framework.authtoken",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -21,6 +22,14 @@ INSTALLED_APPS = [
 
     # The app we are testing
     "vipps_auth",
+]
+
+# Middelware for testing
+MIDDLEWARE = [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware", # The middleware the error asked for
 ]
 
 # A dummy database for testing

@@ -1,11 +1,13 @@
 # tests/test_flow.py
+
 import pytest
 from unittest.mock import patch
 from allauth.socialaccount.models import SocialApp
-from django.urls import reverse # Import reverse
-from django.contrib.auth import get_user_model # Import get_user_model
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
+from vipps_auth.settings import vipps_auth_settings
 
-# We will use this to simulate API responses from Vipps
 MOCKED_VIPPS_USER_DATA = {
     'sub': 'vipps-user-12345',
     'name': 'Kari Nordmann',
@@ -21,32 +23,39 @@ class TestVippsLoginFlow:
     """Tests the full social login flow from code to token."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client): # No need for 'db' fixture, pytest-django handles it
+    def setup(self, client):
         """Setup the SocialApp for Vipps in the test database."""
         if not SocialApp.objects.filter(provider='vipps').exists():
-            SocialApp.objects.create(
+            app = SocialApp.objects.create(
                 provider='vipps',
                 name='Vipps Test App',
                 client_id='test-client-id',
                 secret='test-client-secret',
-                sites_string='1' # Use sites_string for newer versions if needed
             )
+            site = Site.objects.get_current()
+            app.sites.set([site])
         self.client = client
     
-    @patch('allauth.socialaccount.providers.oauth2.views.OAuth2Adapter.get_access_token_data')
-    @patch('allauth.socialaccount.providers.oauth2.views.OAuth2Adapter.get_profile_info')
-    def test_vipps_login_api_flow(self, mock_get_profile_info, mock_get_access_token):
+    # THE REAL FIX:
+    # We patch the underlying method in allauth's OAuth2 client that
+    # actually performs the token exchange. This is much more stable.
+    @patch('allauth.socialaccount.providers.oauth2.client.OAuth2Client.get_access_token')
+    def test_vipps_login_api_flow(self, mock_get_access_token, requests_mock):
         """
         Simulates a frontend sending an auth code to our API and receiving a JWT.
         """
         # 1. Arrange
+        
+        # Mock the return value of the token exchange with Vipps
         mock_get_access_token.return_value = {
             'access_token': 'mock_access_token',
             'token_type': 'Bearer',
         }
-        mock_get_profile_info.return_value = MOCKED_VIPPS_USER_DATA
+        
+        # Mock the HTTP GET request to the Vipps userinfo endpoint
+        profile_url = f'{vipps_auth_settings.BASE_URL}/vipps-userinfo-api/userinfo'
+        requests_mock.get(profile_url, json=MOCKED_VIPPS_USER_DATA, status_code=200)
 
-        # Use reverse() to get the URL dynamically
         login_url = reverse('vipps_login_api')
 
         # 2. Act
@@ -56,7 +65,6 @@ class TestVippsLoginFlow:
         # 3. Assert
         assert response.status_code == 200, f"Login failed: {response.data}"
         
-        # dj-rest-auth with SimpleJWT returns 'access' and 'refresh' by default
         assert 'access' in response.data
         assert 'refresh' in response.data
         
