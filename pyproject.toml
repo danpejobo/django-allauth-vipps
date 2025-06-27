@@ -23,6 +23,9 @@ python = "^3.11"
 django = ">=4.2"
 django-allauth = {extras = ["socialaccount"], version = "^65.9.0"}
 
+[tool.poetry.packages]
+include = "vipps_auth"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-django = "^4.8.0"
