@@ -143,6 +143,40 @@ urlpatterns = [
 ]
 ```
 
+#### Step 1.1: If step 1 fails
+
+If for some reason step 1 fails, you can try to use basic auth.
+
+```python
+# your_project/urls.py
+from django.urls import path
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from vipps_auth.views import VippsOAuth2Adapter
+
+# 1. Create a custom client class that uses HTTP Basic auth when
+#    exchanging the authorization code. In production Vipps expects the
+#    `client_id` and `client_secret` to be provided via the
+#    `Authorization` header, so we enable `basic_auth`.
+class VippsBasicAuthClient(OAuth2Client):
+    def __init__(self, *args, **kwargs):
+        # Use HTTP Basic auth for the token request
+        kwargs['basic_auth'] = True
+        super().__init__(*args, **kwargs)
+
+# This view connects dj-rest-auth to our Vipps adapter
+class VippsLoginAPI(SocialLoginView):
+    adapter_class = VippsOAuth2Adapter
+    client_class = VippsBasicAuthClient
+    # This MUST match the redirect URI you set in the Vipps Portal for your frontend
+    callback_url = "YOUR_FRONTEND_CALLBACK_URL" 
+
+urlpatterns = [
+    # ... your other urls
+    path("api/v1/auth/vipps/", VippsLoginAPI.as_view(), name="vipps_login_api"),
+]
+```
+
 #### Step 2: The Frontend Flow
 
 1.  **Redirect to Vipps:** Your frontend redirects the user to the Vipps authorization URL. You can get this URL from your provider's `get_authorize_url()` method or construct it manually.
@@ -190,8 +224,8 @@ You can customize the provider's behavior by adding a `VIPPS_AUTH_SETTINGS` dict
 
 VIPPS_AUTH_SETTINGS = {
     # The base URL for the Vipps API.
-    # Default: "[https://apitest.vipps.no](https://apitest.vipps.no)" (for testing)
-    # For production, use: "[https://api.vipps.no](https://api.vipps.no)"
+    # Default: "https://apitest.vipps.no" (for testing)
+    # For production, use: "https://api.vipps.no"
     "BASE_URL": "https://api.vipps.no",
 
     # The scopes (permissions) you request from the user.
