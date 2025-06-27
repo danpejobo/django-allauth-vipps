@@ -1,8 +1,8 @@
 # Django Allauth Vipps Provider
 
-[![PyPI version](https://badge.fury.io/py/django-allauth-vipps.svg)](https://badge.fury.io/py/django-allauth-vipps) <!-- TODO: Add link once published to PyPI -->
+[![PyPI version](https://badge.fury.io/py/django-allauth-vipps.svg)](https://pypi.org/project/django-allauth-vipps/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests Passing](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/danpejobo/django-allauth-vipps/actions) <!-- TODO: Add link to CI/CD actions -->
+[![CI/CD Tests](https://github.com/danpejobo/django-allauth-vipps/actions/workflows/ci.yml/badge.svg)](https://github.com/danpejobo/django-allauth-vipps/actions/workflows/ci.yml)
 
 A complete `django-allauth` provider for Vipps Login, supporting both traditional web and modern API (`dj-rest-auth`) authentication flows.
 
