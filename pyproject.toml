@@ -7,6 +7,7 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/danpejobo/django-allauth-vipps" # Update with your repo URL
 keywords = ["django", "allauth", "vipps", "authentication", "login"]
+packages = [{include = "vipps_auth"}]
 classifiers = [
     "Environment :: Web Environment",
     "Framework :: Django",
