@@ -62,3 +62,6 @@ REST_FRAMEWORK = {
 REST_AUTH = {
     "USE_JWT": True,
 }
+
+# Disable email verification to avoid unnecessary confirmation flow in tests
+ACCOUNT_EMAIL_VERIFICATION = "none"
