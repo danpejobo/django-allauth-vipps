@@ -16,8 +16,8 @@ WORKDIR /app
 COPY poetry.lock pyproject.toml /app/
 
 # Call poetry using its full, absolute path to avoid any PATH issues.
-RUN /root/.local/bin/poetry config virtualenvs.create false && \
-    /root/.local/bin/poetry install --no-root --with deployment --no-interaction --no-ansi
+RUN /root/.local/share/pypoetry/venv/bin/poetry config virtualenvs.create false && \
+    /root/.local/share/pypoetry/venv/bin/poetry install --no-root --with deployment --no-interaction --no-ansi
 
 # Copy the rest of the application code
 COPY . /app/
