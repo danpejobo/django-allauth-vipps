@@ -2,6 +2,9 @@
 
 SECRET_KEY = "dummy-key-for-testing-2fA9dAtV7v2uwPC$SV&%ZQdss^ia@4^&"
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
