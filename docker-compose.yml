@@ -2,10 +2,10 @@
 
 services:
   backend:
-    build: .
+    build: docker/Dockerfile
     restart: always
     env_file:
-      - .env
+      - ./.env
     # We will name the container to make it easy to find for the proxy
     container_name: vipps_test_app_backend
     expose:
