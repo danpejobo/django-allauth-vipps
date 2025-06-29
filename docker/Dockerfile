@@ -7,8 +7,10 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Install Poetry for dependency management
-RUN pip install poetry
+# Installer Poetry
+ENV POETRY_VERSION=1.7.1
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set the working directory inside the container
 WORKDIR /app
