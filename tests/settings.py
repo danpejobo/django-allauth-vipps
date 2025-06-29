@@ -1,4 +1,11 @@
 # tests/settings.py
+import os
+
+# Read the public domain from the .env file
+TEST_APP_DOMAIN = os.getenv("TEST_APP_DOMAIN", "http://127.0.0.1:8000")
+
+# We point it to the same callback URL that the standard web flow uses.
+VIPPS_API_CALLBACK_URL = f"{TEST_APP_DOMAIN}/accounts/vipps/login/callback/"
 
 SECRET_KEY = "dummy-key-for-testing-2fA9dAtV7v2uwPC$SV&%ZQdss^ia@4^&"
 
