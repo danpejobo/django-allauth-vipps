@@ -11,7 +11,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # 2. Add the directory where the installer places the 'poetry' command to the system's PATH.
 #    Inside the container (as the root user), this is /root/.local/bin.
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH="/root/.local/bin:~/.local/share/pypoetry:$PATH"
 
 # Set the working directory
 WORKDIR /app
@@ -20,7 +20,8 @@ WORKDIR /app
 COPY poetry.lock pyproject.toml /app/
 
 # Configure Poetry and install project dependencies (including the 'deployment' group for gunicorn)
-RUN poetry config virtualenvs.create false && poetry install --no-root --with deployment --no-interaction --no-ansi
+RUN poetry config virtualenvs.create false \
+ && poetry install --no-root --with deployment --no-interaction --no-ansi
 
 # Copy the rest of the application code
 COPY . /app/
