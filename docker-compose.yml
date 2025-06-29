@@ -2,7 +2,9 @@
 
 services:
   backend:
-    build: docker/Dockerfile
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
     restart: always
     env_file:
       - ./.env
