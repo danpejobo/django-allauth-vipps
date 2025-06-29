@@ -27,5 +27,8 @@ COPY . /app/
 
 EXPOSE 8000
 
+# Set the DJANGO_SETTINGS_MODULE environment variable for Gunicorn to use.
+ENV DJANGO_SETTINGS_MODULE=tests.settings
+
 # The CMD remains the same. Gunicorn was installed system-wide, so it can be called directly.
-CMD ["gunicorn", "tests.wsgi:application", "--bind", "0.0.0.0:8000", "--settings=tests.settings"]
+CMD ["gunicorn", "tests.wsgi:application", "--bind", "0.0.0.0:8000"]
