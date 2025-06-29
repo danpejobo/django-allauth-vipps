@@ -20,6 +20,9 @@ RUN pipx install poetry
 # Set the working directory
 WORKDIR /app
 
+# This allows Python to find the 'tests' module.
+ENV PYTHONPATH /app
+
 # Copy dependency files
 COPY poetry.lock pyproject.toml /app/
 
