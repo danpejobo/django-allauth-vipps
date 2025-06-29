@@ -1,13 +1,21 @@
-# Dockerfile using the official curl installer
+# Dockerfile (Using the recommended pipx method)
 
 FROM python:3.11-slim
 
-# Set environment variables for Python
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# 1. Install Poetry using the official installer script from the documentation
-RUN curl -sSL https://install.python-poetry.org | python3 -
+# 1. Install pipx, a tool for installing and running Python applications in isolated environments.
+RUN pip install pipx
+
+# 2. Ensure the directory for pipx-installed applications is in the system's PATH.
+RUN pipx ensurepath
+
+# 3. Explicitly add the standard pipx bin directory to the PATH for subsequent commands.
+ENV PATH="/root/.local/bin:$PATH"
+
+# 4. Use pipx to install poetry. This automatically handles its environment and path.
+RUN pipx install poetry
 
 # Set the working directory
 WORKDIR /app
@@ -15,17 +23,16 @@ WORKDIR /app
 # Copy dependency files
 COPY poetry.lock pyproject.toml /app/
 
-# Call poetry using its full, absolute path to avoid any PATH issues.
-RUN /root/.local/share/pypoetry/venv/bin/poetry config virtualenvs.create false && \
-    /root/.local/share/pypoetry/venv/bin/poetry install --no-root --with deployment --no-interaction --no-ansi
+# Now 'poetry' is a known command, so we can use it directly.
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-root --with deployment --no-interaction --no-ansi
 
 # Copy the rest of the application code
 COPY . /app/
 
 EXPOSE 8000
 
-# Set the DJANGO_SETTINGS_MODULE environment variable for Gunicorn to use.
 ENV DJANGO_SETTINGS_MODULE=tests.settings
 
-# The CMD remains the same. Gunicorn was installed system-wide, so it can be called directly.
+# Gunicorn was installed system-wide by the poetry install command, so we can call it directly.
 CMD ["gunicorn", "tests.wsgi:application", "--bind", "0.0.0.0:8000"]
