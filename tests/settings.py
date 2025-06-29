@@ -29,14 +29,32 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "allauth.account.middleware.AccountMiddleware", # The middleware the error asked for
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+]
+
+# The admin requires a template engine to render its HTML pages.
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
 ]
 
 # A dummy database for testing
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "NAME": "/app/db.sqlite3",
     }
 }
 
@@ -65,3 +83,8 @@ REST_AUTH = {
 
 # Disable email verification to avoid unnecessary confirmation flow in tests
 ACCOUNT_EMAIL_VERIFICATION = "none"
+
+# This tells the package to use the Vipps test environment
+VIPPS_AUTH_SETTINGS = {
+    "BASE_URL": "https://apitest.vipps.no",
+}
