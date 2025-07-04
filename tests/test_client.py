@@ -25,16 +25,15 @@ def test_vipps_oauth2_client_sets_basic_auth(social_app):
     """
     request = RequestFactory().get('/')
     
-    # Instantiate the client, which is the core of what we're testing.
-    # The arguments are required by the parent OAuth2Client's __init__ method.
+    # This call must match the new __init__ signature of our client
     client = VippsOAuth2Client(
         request=request,
         consumer_key=social_app.client_id,
         consumer_secret=social_app.secret,
-        access_token_method='POST', # This can be any valid method for the test
+        access_token_method='POST',
         access_token_url='https://example.com/token',
         callback_url='https://example.com/callback',
+        scope=['openid', 'name'] # This argument is required by our __init__
     )
 
-    # The main assertion: ensure basic_auth is forced to True.
     assert client.basic_auth is True
