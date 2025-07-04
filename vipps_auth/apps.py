@@ -9,20 +9,9 @@ class VippsAuthConfig(AppConfig):
 
     def ready(self):
         """
-        This method is called by Django when the app is ready.
-        We use it to explicitly register our provider with django-allauth.
-        This is the most reliable way to ensure allauth knows about our custom provider.
+        Register the provider with django-allauth when the app is ready.
         """
-        try:
-            from allauth.socialaccount import providers
-            from .provider import VippsProvider
-            # Apply compatibility monkey patch for OAuth2Client when the app is
-            # fully loaded and Django's registry is ready.
-            from . import patch_allauth_client
+        from allauth.socialaccount import providers
+        from .provider import VippsProvider
 
-            patch_allauth_client()
-            providers.registry.register(VippsProvider)
-        except ImportError:
-            # This try/except block is a safeguard for cases where allauth
-            # might not be installed yet during certain management commands.
-            pass
+        providers.registry.register(VippsProvider)
