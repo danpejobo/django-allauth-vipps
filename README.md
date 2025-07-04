@@ -13,7 +13,7 @@ This package provides a configurable, reusable Django app that allows users to s
 -   Integrates seamlessly with `django-allauth`'s social account framework.
 -   Supports API-first authentication flows via `dj-rest-auth`.
 -   Configurable for both Vipps Test and Production environments via standard settings.
--   Allows customization of requested scopes.
+-   Correctly handles Vipps' required `client_secret_basic` authentication method for REST APIs.
 -   Fully tested and documented for a "drop-in" experience.
 
 ## 1. Installation & Setup
@@ -23,38 +23,25 @@ This package provides a configurable, reusable Django app that allows users to s
 ```bash
 pip install django-allauth-vipps
 ```
+
 *(Or `poetry add django-allauth-vipps` if you use Poetry)*
 
 ### Step 2: Update `INSTALLED_APPS`
 
-Add `vipps_auth` to your `INSTALLED_APPS` in your Django `settings.py`. It must be placed after the standard `allauth` apps.
+Add `vipps_auth` to your `INSTALLED_APPS` in your Django `settings.py`.
 
 ```python
 # settings.py
 
 INSTALLED_APPS = [
-    # ... other apps
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.sites',  # Required by allauth
-
-    # Allauth apps
+    # ...
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    
-    # Add the Vipps provider app
     'vipps_auth',
 ]
 
-# Required by allauth
 SITE_ID = 1
-
-# Ensure you have authentication backends configured
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -63,9 +50,7 @@ AUTHENTICATION_BACKENDS = [
 
 ### Step 3: Configure the Provider
 
-This package is configured using `django-allauth`'s standard `SOCIALACCOUNT_PROVIDERS` setting. This allows you to set your credentials, select the environment (test or production), and define what data you request from the user.
-
-Add the following to your `settings.py`:
+Configure the provider using `django-allauth`'s standard `SOCIALACCOUNT_PROVIDERS` setting in your `settings.py`.
 
 ```python
 # settings.py
@@ -73,30 +58,19 @@ import os
 
 SOCIALACCOUNT_PROVIDERS = {
     'vipps': {
-        # Method 1 (Recommended): Configure credentials directly in settings.
-        # This is ideal for production and CI/CD environments.
+        # Configure credentials using environment variables.
         'APPS': [
             {
                 'client_id': os.getenv('VIPPS_CLIENT_ID'),
                 'secret': os.getenv('VIPPS_CLIENT_SECRET'),
-                'key': '' # Not used by Vipps
+                'key': ''
             }
         ],
 
         # --- General Provider Settings ---
-
-        # For production, this must be False. For development, set to True
-        # to use the Vipps test API ([https://apitest.vipps.no](https://apitest.vipps.no)).
-        'TEST_MODE': False,
-
-        # This tells django-allauth to trust the email address received from Vipps.
+        'TEST_MODE': False, # Set to True for development/testing
         'VERIFIED_EMAIL': True,
-
-        # (Recommended) Enforce that the login fails if Vipps has not
-        # verified the user's email address on their end.
         'EMAIL_VERIFIED_REQUIRED': True,
-
-        # Define the specific user data (scopes) you want to request.
         'SCOPE': [
             'openid',
             'name',
@@ -106,19 +80,17 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 ```
-> **Important:** For credentials, choose **one** method. Either use the `APPS` key in `settings.py` (recommended) or create a `SocialApp` in the Django Admin as described in the `django-allauth` documentation. Using both for the same provider will cause an error.
+> **Important:** For credentials, either use the `APPS` key in `settings.py` (recommended) or create a `SocialApp` in the Django Admin. Using both for the same provider will cause an error.
 
 ### Step 4: Configure on Vipps Developer Portal
 
-1.  Log in to the [Vipps MobilePay Developer Portal](https://portal.vippsmobilepay.com/).
-2.  Navigate to the "Developer" section and get your credentials for a sales unit.
-    * **Client ID** (goes into `VIPPS_CLIENT_ID` environment variable)
-    * **Client Secret** (goes into `VIPPS_CLIENT_SECRET` environment variable)
-3.  In the **"Redirect URIs"** section, add the URL that Vipps will redirect users back to.
-    * **Standard Web Flow:** `https://yourdomain.com/accounts/vipps/login/callback/`
-    * **API/SPA Flow:** This should be the URL of your *frontend* application that handles the final redirect, e.g., `https://my-react-app.com/auth/callback/vipps`
+1. Log in to the [Vipps MobilePay Developer Portal](https://portal.vippsmobilepay.com/).
+2. Get your **Client ID** and **Client Secret**.
+3. Set the **Token endpoint authentication method** to **`client_secret_basic`**.
+4. Add your **Redirect URI** (`https://yourdomain.com/accounts/vipps/login/callback/` for web flows, or your frontend URL for API flows).
 
-### Step 5: Run Database Migrations
+### Step 5: Run Migrations
+
 ```bash
 python manage.py migrate
 ```
@@ -127,45 +99,32 @@ python manage.py migrate
 
 ### For Traditional Django Websites
 
-If you are using server-rendered templates, add a Vipps login button with the `provider_login_url` template tag.
-
-**In your template (`login.html`):**
+Use the `provider_login_url` template tag.
 ```html
 {% load socialaccount %}
-
-<h2>Login</h2>
 <a href="{% provider_login_url 'vipps' %}">Log In with Vipps</a>
 ```
 
 ### For REST APIs (with `dj-rest-auth`)
 
-This is the standard flow for Single-Page Applications (React, Vue, etc.).
+When using `dj-rest-auth`, you must use the custom `VippsOAuth2Client` provided by this package to ensure the correct authentication method (`client_secret_basic`) is used.
 
-In your project's `urls.py`, create a login view that uses the `VippsOAuth2Adapter`.
+In your project's `urls.py`, create your login view like this:
 
 ```python
 # your_project/urls.py
 from django.urls import path
 from dj_rest_auth.registration.views import SocialLoginView
 from vipps_auth.views import VippsOAuth2Adapter
+from vipps_auth.client import VippsOAuth2Client # <-- Import the custom client
 
-# This view connects dj-rest-auth to our Vipps adapter.
-# No client_class is needed unless you have advanced requirements.
+# This view connects dj-rest-auth to our Vipps adapter
 class VippsLoginAPI(SocialLoginView):
     adapter_class = VippsOAuth2Adapter
-    # This MUST match the redirect URI you set in the Vipps Portal for your frontend
+    client_class = VippsOAuth2Client  # <-- Use the custom client here
     callback_url = "YOUR_FRONTEND_CALLBACK_URL" 
 
 urlpatterns = [
     # ... your other urls
     path("api/v1/auth/vipps/", VippsLoginAPI.as_view(), name="vipps_login_api"),
 ]
-```
-
-## 3. Development & Testing
-
-To work on this package locally:
-1.  Clone the repository: `git clone https://github.com/danpejobo/django-allauth-vipps.git`
-2.  Install dependencies: `poetry install`
-3.  Activate the virtual environment: `poetry shell`
-4.  Run the test suite: `poetry run pytest`

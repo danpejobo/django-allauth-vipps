@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-allauth-vipps"
-version = "0.2.0"
+version = "0.2.1"
 description = "A configurable Django Allauth provider for Vipps Login."
 authors = ["Daniel Persen <danpe_jobo@hotmail.com>"]
 license = "MIT"
